@@ -8,7 +8,7 @@ from station.models import (
     Crew,
     Station,
     Route,
-    Journey
+    Journey,
 )
 
 
@@ -20,31 +20,57 @@ admin.site.register(TrainType)
 
 @admin.register(Train)
 class TrainAdmin(ModelAdmin):
-    list_display = ("name", "cargo_num", "places_in_cargo", "train_type",)
+    list_display = (
+        "name",
+        "cargo_num",
+        "places_in_cargo",
+        "train_type",
+    )
     list_filter = ("train_type",)
 
 
 @admin.register(Crew)
 class CrewAdmin(ModelAdmin):
-    list_display = ("first_name", "last_name",)
+    list_display = (
+        "first_name",
+        "last_name",
+    )
 
 
 @admin.register(Station)
 class StationAdmin(ModelAdmin):
-    list_display = ("name", "latitude", "longtitude",)
+    list_display = (
+        "name",
+        "latitude",
+        "longtitude",
+    )
 
 
 @admin.register(Route)
 class RouteAdmin(ModelAdmin):
-    list_display = ("source", "destination", "distance",)
-    list_filter = ("source", "destination",)
+    list_display = (
+        "source",
+        "destination",
+        "distance",
+    )
+    list_filter = (
+        "source",
+        "destination",
+    )
     search_fields = ("__str__",)
 
 
 @admin.register(Journey)
 class JourneyAdmin(ModelAdmin):
-    list_display = ("train", "route", "departure_time",)
-    list_filter = ("train", "route",)
+    list_display = (
+        "train",
+        "route",
+        "departure_time",
+    )
+    list_filter = (
+        "train",
+        "route",
+    )
 
 
 class TicketInline(TabularInline):
@@ -55,13 +81,8 @@ class TicketInline(TabularInline):
 class OrderAdmin(ModelAdmin):
     inlines = [TicketInline]
 
-    list_display = ("created_at", "user",)
+    list_display = (
+        "created_at",
+        "user",
+    )
     search_fields = ("user",)
-
-
-
-
-
-
-
-
