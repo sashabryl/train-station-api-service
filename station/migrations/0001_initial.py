@@ -44,7 +44,9 @@ class Migration(migrations.Migration):
                 ("departure_time", models.DateTimeField()),
                 (
                     "crew_members",
-                    models.ManyToManyField(related_name="journeys", to="station.crew"),
+                    models.ManyToManyField(
+                        related_name="journeys", to="station.crew"
+                    ),
                 ),
             ],
             options={

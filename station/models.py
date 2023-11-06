@@ -17,9 +17,7 @@ class Train(models.Model):
     cargo_num = models.IntegerField()
     places_in_cargo = models.IntegerField()
     train_type = models.ForeignKey(
-        "TrainType",
-        on_delete=models.CASCADE,
-        related_name="trains"
+        "TrainType", on_delete=models.CASCADE, related_name="trains"
     )
 
     class Meta:
@@ -47,14 +45,10 @@ class Station(models.Model):
 
 class Route(models.Model):
     source = models.ForeignKey(
-        "Station",
-        on_delete=models.CASCADE,
-        related_name="routes_from"
+        "Station", on_delete=models.CASCADE, related_name="routes_from"
     )
     destination = models.ForeignKey(
-        "Station",
-        on_delete=models.CASCADE,
-        related_name="routes_to"
+        "Station", on_delete=models.CASCADE, related_name="routes_to"
     )
     distance = models.IntegerField()
 
@@ -75,19 +69,13 @@ class Crew(models.Model):
 
 class Journey(models.Model):
     route = models.ForeignKey(
-        "Route",
-        on_delete=models.CASCADE,
-        related_name="journeys"
+        "Route", on_delete=models.CASCADE, related_name="journeys"
     )
     train = models.ForeignKey(
-        "Train",
-        on_delete=models.CASCADE,
-        related_name="journeys"
+        "Train", on_delete=models.CASCADE, related_name="journeys"
     )
     departure_time = models.DateTimeField()
-    crew_members = models.ManyToManyField(
-        "Crew", related_name="journeys"
-    )
+    crew_members = models.ManyToManyField("Crew", related_name="journeys")
 
     class Meta:
         ordering = ["-departure_time"]
@@ -101,7 +89,7 @@ class Order(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="orders"
+        related_name="orders",
     )
 
     class Meta:
@@ -112,14 +100,10 @@ class Ticket(models.Model):
     cargo = models.IntegerField()
     seat = models.IntegerField()
     journey = models.ForeignKey(
-        "Journey",
-        on_delete=models.CASCADE,
-        related_name="tickets"
+        "Journey", on_delete=models.CASCADE, related_name="tickets"
     )
     order = models.ForeignKey(
-        "Order",
-        on_delete=models.CASCADE,
-        related_name="tickets"
+        "Order", on_delete=models.CASCADE, related_name="tickets"
     )
 
     def __str__(self):
