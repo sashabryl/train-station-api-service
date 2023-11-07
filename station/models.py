@@ -36,13 +36,13 @@ class Train(models.Model):
 class Station(models.Model):
     name = models.CharField(max_length=255, unique=True)
     latitude = models.FloatField()
-    longtitude = models.FloatField()
+    longitude = models.FloatField()
 
     class Meta:
         ordering = ["name"]
 
     def __str__(self):
-        return f"{self.name} ({self.latitude}, {self.longtitude})"
+        return f"{self.name} ({self.latitude}, {self.longitude})"
 
 
 class Route(models.Model):
@@ -53,9 +53,18 @@ class Route(models.Model):
         "Station", on_delete=models.CASCADE, related_name="routes_to"
     )
     distance = models.IntegerField()
+    description = models.TextField(
+        default="Straight to the point of destination"
+    )
 
     class Meta:
         ordering = ["-distance"]
+        constraints = [
+            UniqueConstraint(
+                fields=["source", "destination", "distance"],
+                name="unique_route"
+            )
+        ]
 
     def __str__(self):
         return f"{self.source.name} - {self.destination.name}"
