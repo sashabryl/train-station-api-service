@@ -1,6 +1,8 @@
 from django.db.models import Q, F, Count
 from rest_framework import viewsets
+from rest_framework.mixins import ListModelMixin, CreateModelMixin
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAuthenticated
 
 from station.models import (
     TrainType,
@@ -38,7 +40,7 @@ class TrainViewSet(viewsets.ModelViewSet):
     queryset = Train.objects.all()
 
     def get_serializer_class(self):
-        if self.action == "list":
+        if self.action in ["list", "retrieve"]:
             return TrainListSerializer
 
         return self.serializer_class
@@ -194,13 +196,18 @@ class OrderPagination(PageNumberPagination):
     max_page_size = 100
 
 
-class OrderViewSet(viewsets.ModelViewSet):
+class OrderViewSet(
+    viewsets.GenericViewSet,
+    ListModelMixin,
+    CreateModelMixin
+):
     serializer_class = OrderSerializer
     queryset = Order.objects.prefetch_related(
         "tickets__journey__route__source",
         "tickets__journey__route__destination",
     )
     pagination_class = OrderPagination
+    permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
         if self.action == "list":
