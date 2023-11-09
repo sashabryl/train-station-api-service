@@ -36,10 +36,19 @@ class TrainSerializer(serializers.ModelSerializer):
         )
 
 
+class TrainImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Train
+        fields = ("id", "image")
+
+
 class TrainListSerializer(TrainSerializer):
     train_type = serializers.SlugRelatedField(
         slug_field="name", read_only=True
     )
+
+    class Meta(TrainSerializer.Meta):
+        fields = TrainSerializer.Meta.fields + ("image",)
 
 
 class StationSerializer(serializers.ModelSerializer):
@@ -49,6 +58,24 @@ class StationSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         return Station.objects.create(**validated_data)
+
+
+class StationListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Station
+        fields = ("id", "name", "image")
+
+
+class StationDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Station
+        fields = ("id", "name", "latitude", "longitude", "image")
+
+
+class StationImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Station
+        fields = ("id", "image")
 
 
 class RouteSerializer(serializers.ModelSerializer):
@@ -65,8 +92,8 @@ class RouteListSerializer(RouteSerializer):
 
 
 class RouteDetailSerializer(RouteSerializer):
-    source = StationSerializer(many=False, read_only=True)
-    destination = StationSerializer(many=False, read_only=True)
+    source = StationListSerializer(many=False, read_only=True)
+    destination = StationListSerializer(many=False, read_only=True)
 
 
 class CrewSerializer(serializers.ModelSerializer):
@@ -115,9 +142,10 @@ class TicketCargoSeatSerializer(serializers.ModelSerializer):
 
 
 class JourneyDetailSerializer(JourneySerializer):
-    route = RouteListSerializer(many=False)
+    route = RouteDetailSerializer(many=False)
     train = TrainListSerializer(many=False)
     crew_members = serializers.StringRelatedField(many=True)
+    tickets_available = serializers.IntegerField()
     taken_seats = TicketCargoSeatSerializer(
         many=True, read_only=True, source="tickets"
     )
@@ -130,6 +158,7 @@ class JourneyDetailSerializer(JourneySerializer):
             "train",
             "departure_time",
             "crew_members",
+            "tickets_available",
             "taken_seats",
         )
 

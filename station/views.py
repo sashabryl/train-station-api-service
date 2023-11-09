@@ -1,8 +1,10 @@
 from django.db.models import Q, F, Count
 from rest_framework import viewsets
+from rest_framework.decorators import action
 from rest_framework.mixins import ListModelMixin, CreateModelMixin
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.response import Response
 
 from station.models import (
     TrainType,
@@ -26,7 +28,7 @@ from station.serializers import (
     JourneyListSerializer,
     JourneyDetailSerializer,
     OrderSerializer,
-    OrderListSerializer,
+    OrderListSerializer, TrainImageSerializer, StationListSerializer, StationDetailSerializer, StationImageSerializer,
 )
 
 
@@ -43,6 +45,9 @@ class TrainViewSet(viewsets.ModelViewSet):
         if self.action in ["list", "retrieve"]:
             return TrainListSerializer
 
+        if self.action == "upload_image":
+            return TrainImageSerializer
+
         return self.serializer_class
 
     def get_queryset(self):
@@ -56,6 +61,15 @@ class TrainViewSet(viewsets.ModelViewSet):
             queryset = queryset.select_related("train_type")
 
         return queryset
+
+    @action(methods=["POST"], detail=True, url_path="upload-image")
+    def upload_image(self, request, pk=None):
+        """Endpoint for adding an image to a specific train"""
+        train = self.get_object()
+        serializer = self.get_serializer(train, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 
 
 class StationViewSet(viewsets.ModelViewSet):
@@ -72,7 +86,25 @@ class StationViewSet(viewsets.ModelViewSet):
         return queryset
 
     def get_serializer_class(self):
+        if self.action == "list":
+            return StationListSerializer
+
+        if self.action == "retrieve":
+            return StationDetailSerializer
+
+        if self.action == "upload_image":
+            return StationImageSerializer
+
         return self.serializer_class
+
+    @action(methods=["POST"], detail=True, url_path="upload-image")
+    def upload_image(self, request, pk=None):
+        """Endpoint for adding an image to a specific station"""
+        station = self.get_object()
+        serializer = self.get_serializer(station, request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 
 
 class RouteViewSet(viewsets.ModelViewSet):
@@ -171,9 +203,8 @@ class JourneyViewSet(viewsets.ModelViewSet):
         if departure_time:
             queryset = queryset.filter(departure_time__time=departure_time)
 
-        if self.action == "list":
-            queryset = (
-                queryset.select_related(
+        if self.action in ["list", "retrieve"]:
+            queryset = (queryset.select_related(
                     "train__train_type", "route__source", "route__destination"
                 )
                 .prefetch_related("crew_members")
