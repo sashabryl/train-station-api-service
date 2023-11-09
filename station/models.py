@@ -62,7 +62,7 @@ class Route(models.Model):
         constraints = [
             UniqueConstraint(
                 fields=["source", "destination", "distance"],
-                name="unique_route"
+                name="unique_route",
             )
         ]
 
@@ -73,6 +73,9 @@ class Route(models.Model):
 class Crew(models.Model):
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
+
+    class Meta:
+        ordering = ["last_name", "first_name"]
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
@@ -126,13 +129,14 @@ class Ticket(models.Model):
         ]
 
     @staticmethod
-    def validata_seat(
+    def validate_seat(
         seat: int,
-        max_seats: int,
         cargo: int,
-        max_cargos: int,
+        journey: Journey(),
         exception_to_raise: Exception,
     ):
+        max_seats = journey.train.places_in_cargo
+        max_cargos = journey.train.cargo_num
         if not 1 <= seat <= max_seats:
             raise exception_to_raise(
                 f"Number of seat should be in range "
@@ -145,11 +149,10 @@ class Ticket(models.Model):
             )
 
     def clean(self):
-        Ticket.validata_seat(
+        Ticket.validate_seat(
             self.seat,
-            self.journey.train.places_in_cargo,
             self.cargo,
-            self.journey.train.cargo_num,
+            self.journey,
             ValidationError,
         )
 
@@ -158,12 +161,10 @@ class Ticket(models.Model):
         force_insert=False,
         force_update=False,
         using=None,
-        update_fields=None
+        update_fields=None,
     ):
         self.full_clean()
-        return super().save(
-            force_insert, force_update, using, update_fields
-        )
+        return super().save(force_insert, force_update, using, update_fields)
 
     def __str__(self):
         return (
