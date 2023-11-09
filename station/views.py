@@ -1,5 +1,6 @@
 from django.db.models import Q, F, Count
 from rest_framework import viewsets
+from rest_framework.pagination import PageNumberPagination
 
 from station.models import (
     TrainType,
@@ -188,12 +189,19 @@ class JourneyViewSet(viewsets.ModelViewSet):
         return queryset
 
 
+class OrderPagination(PageNumberPagination):
+    page_size = 8
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
+
 class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSerializer
     queryset = Order.objects.prefetch_related(
         "tickets__journey__route__source",
         "tickets__journey__route__destination",
     )
+    pagination_class = OrderPagination
 
     def get_serializer_class(self):
         if self.action == "list":
