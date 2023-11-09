@@ -42,7 +42,7 @@ class StationAdmin(ModelAdmin):
     list_display = (
         "name",
         "latitude",
-        "longtitude",
+        "longitude",
     )
 
 
