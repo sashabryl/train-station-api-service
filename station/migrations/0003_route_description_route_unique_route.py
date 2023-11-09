@@ -12,12 +12,15 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="route",
             name="description",
-            field=models.TextField(default="Straight to the point of destination"),
+            field=models.TextField(
+                default="Straight to the point of destination"
+            ),
         ),
         migrations.AddConstraint(
             model_name="route",
             constraint=models.UniqueConstraint(
-                fields=("source", "destination", "distance"), name="unique_route"
+                fields=("source", "destination", "distance"),
+                name="unique_route",
             ),
         ),
     ]

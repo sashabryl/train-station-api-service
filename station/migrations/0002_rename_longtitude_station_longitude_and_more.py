@@ -17,7 +17,8 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="ticket",
             constraint=models.UniqueConstraint(
-                fields=("seat", "cargo", "journey"), name="unique_seat_booking"
+                fields=("seat", "cargo", "journey"),
+                name="unique_seat_booking",
             ),
         ),
     ]
