@@ -1,4 +1,5 @@
 from django.db.models import Q, F, Count
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.mixins import ListModelMixin, CreateModelMixin
@@ -28,7 +29,11 @@ from station.serializers import (
     JourneyListSerializer,
     JourneyDetailSerializer,
     OrderSerializer,
-    OrderListSerializer, TrainImageSerializer, StationListSerializer, StationDetailSerializer, StationImageSerializer,
+    OrderListSerializer,
+    TrainImageSerializer,
+    StationListSerializer,
+    StationDetailSerializer,
+    StationImageSerializer,
 )
 
 
@@ -71,6 +76,18 @@ class TrainViewSet(viewsets.ModelViewSet):
         serializer.save()
         return Response(serializer.data)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "name",
+                type=str,
+                description="Filter by name (ex. ?name=Le parovoz)",
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
 
 class StationViewSet(viewsets.ModelViewSet):
     serializer_class = StationSerializer
@@ -106,6 +123,18 @@ class StationViewSet(viewsets.ModelViewSet):
         serializer.save()
         return Response(serializer.data)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "name",
+                type=str,
+                description="Filter by name (ex. ?title=North Station)",
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
 
 class RouteViewSet(viewsets.ModelViewSet):
     serializer_class = RouteSerializer
@@ -138,6 +167,23 @@ class RouteViewSet(viewsets.ModelViewSet):
 
         return queryset
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "source",
+                type=str,
+                description="Filter by source (ex. ?source=Lviv)",
+            ),
+            OpenApiParameter(
+                "destination",
+                type=str,
+                description="Filter by destination (ex. ?destination=Rabat)",
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
 
 class CrewViewSet(viewsets.ModelViewSet):
     serializer_class = CrewSerializer
@@ -166,6 +212,21 @@ class CrewViewSet(viewsets.ModelViewSet):
                 queryset = search_for_first_name
 
         return queryset
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "full_name",
+                type=str,
+                description="Filter by full name "
+                            "(considers only two first words"
+                            " and return all slightly similar answers)"
+                            " (ex. ?full_name=Alice Bob, ?full_name=Bo)",
+            ),
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
 
 class JourneyViewSet(viewsets.ModelViewSet):
@@ -204,7 +265,8 @@ class JourneyViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(departure_time__time=departure_time)
 
         if self.action in ["list", "retrieve"]:
-            queryset = (queryset.select_related(
+            queryset = (
+                queryset.select_related(
                     "train__train_type", "route__source", "route__destination"
                 )
                 .prefetch_related("crew_members")
@@ -220,6 +282,36 @@ class JourneyViewSet(viewsets.ModelViewSet):
             )
         return queryset
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                "source",
+                type=str,
+                description="Filter by source (ex. ?source=Lviv)",
+            ),
+            OpenApiParameter(
+                "destination",
+                type=str,
+                description="Filter by destination (ex. ?destination=Rabat)",
+            ),
+            OpenApiParameter(
+                "departure_date",
+                type=str,
+                description="Filter by date of departure"
+                            " (ex. ?departure_date=2024-01-03)"
+            ),
+            OpenApiParameter(
+                "departure_time",
+                type=str,
+                description="Filter by time of departure"
+                            " (ex. ?departure_time=21:38)"
+            )
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+
 
 class OrderPagination(PageNumberPagination):
     page_size = 8
@@ -227,11 +319,7 @@ class OrderPagination(PageNumberPagination):
     max_page_size = 100
 
 
-class OrderViewSet(
-    viewsets.GenericViewSet,
-    ListModelMixin,
-    CreateModelMixin
-):
+class OrderViewSet(viewsets.GenericViewSet, ListModelMixin, CreateModelMixin):
     serializer_class = OrderSerializer
     queryset = Order.objects.prefetch_related(
         "tickets__journey__route__source",
