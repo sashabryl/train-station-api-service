@@ -159,7 +159,9 @@ class JourneyViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(route__source__name__icontains=source)
 
         if destination:
-            queryset = queryset.filter(route__destination__name__icontains=source)
+            queryset = queryset.filter(
+                route__destination__name__icontains=source
+            )
 
         if departure_date:
             queryset = queryset.filter(departure_time__date=departure_date)
@@ -169,19 +171,16 @@ class JourneyViewSet(viewsets.ModelViewSet):
 
         if self.action == "list":
             queryset = (
-                queryset
-                .select_related(
-                    "train__train_type",
-                    "route__source",
-                    "route__destination"
+                queryset.select_related(
+                    "train__train_type", "route__source", "route__destination"
                 )
                 .prefetch_related("crew_members")
                 .annotate(
                     tickets_available=(
                         (
-                            F("train__cargo_num") *
-                            F("train__places_in_cargo") -
-                            Count("tickets")
+                            F("train__cargo_num")
+                            * F("train__places_in_cargo")
+                            - Count("tickets")
                         )
                     )
                 )

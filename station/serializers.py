@@ -118,7 +118,9 @@ class JourneyDetailSerializer(JourneySerializer):
     route = RouteListSerializer(many=False)
     train = TrainListSerializer(many=False)
     crew_members = serializers.StringRelatedField(many=True)
-    taken_seats = TicketCargoSeatSerializer(many=True, read_only=True, source="tickets")
+    taken_seats = TicketCargoSeatSerializer(
+        many=True, read_only=True, source="tickets"
+    )
 
     class Meta:
         model = Journey
@@ -128,8 +130,9 @@ class JourneyDetailSerializer(JourneySerializer):
             "train",
             "departure_time",
             "crew_members",
-            "taken_seats"
+            "taken_seats",
         )
+
 
 class TicketSerializer(serializers.ModelSerializer):
     class Meta:
