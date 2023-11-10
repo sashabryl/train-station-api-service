@@ -219,9 +219,9 @@ class CrewViewSet(viewsets.ModelViewSet):
                 "full_name",
                 type=str,
                 description="Filter by full name "
-                            "(considers only two first words"
-                            " and return all slightly similar answers)"
-                            " (ex. ?full_name=Alice Bob, ?full_name=Bo)",
+                "(considers only two first words"
+                " and return all slightly similar answers)"
+                " (ex. ?full_name=Alice Bob, ?full_name=Bo)",
             ),
         ]
     )
@@ -298,19 +298,18 @@ class JourneyViewSet(viewsets.ModelViewSet):
                 "departure_date",
                 type=str,
                 description="Filter by date of departure"
-                            " (ex. ?departure_date=2024-01-03)"
+                " (ex. ?departure_date=2024-01-03)",
             ),
             OpenApiParameter(
                 "departure_time",
                 type=str,
                 description="Filter by time of departure"
-                            " (ex. ?departure_time=21:38)"
-            )
+                " (ex. ?departure_time=21:38)",
+            ),
         ]
     )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
-
 
 
 class OrderPagination(PageNumberPagination):

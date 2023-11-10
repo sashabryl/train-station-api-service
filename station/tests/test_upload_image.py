@@ -1,98 +1,102 @@
-from django.urls import reverse
+import os
+import tempfile
 
-STATION_URL = reverse("station:station-list")
+from PIL import Image
+from django.test import TestCase
+from django.contrib.auth import get_user_model
+from django.urls import reverse
+from rest_framework import status
+from rest_framework.test import APIClient
+
+from station.models import Station, TrainType, Train
+
+
+STATION_URL = reverse("train_station:station-list")
+TRAIN_URL = reverse("train_station:train-list")
 
 
 def sample_station(**params):
     defaults = {
         "name": "Sample vokzal",
-        "description": "Sample description",
         "latitude": 10.15,
-        "longitude": 32.14
+        "longitude": 32.14,
     }
     defaults.update(params)
 
-    return Movie.objects.create(**defaults)
+    return Station.objects.create(**defaults)
 
 
-def sample_genre(**params):
+def sample_train_type(name: str = "express"):
+    return TrainType.objects.create(name=name)
+
+
+def sample_train(**params):
     defaults = {
-        "name": "Drama",
+        "name": "Lincorn",
+        "cargo_num": 10,
+        "places_in_cargo": 15,
+        "train_type": sample_train_type(),
     }
     defaults.update(params)
 
-    return Genre.objects.create(**defaults)
+    return Train.objects.create(**defaults)
 
 
-def sample_actor(**params):
-    defaults = {"first_name": "George", "last_name": "Clooney"}
-    defaults.update(params)
-
-    return Actor.objects.create(**defaults)
-
-
-def sample_movie_session(**params):
-    cinema_hall = CinemaHall.objects.create(
-        name="Blue", rows=20, seats_in_row=20
-    )
-
-    defaults = {
-        "show_time": "2022-06-02 14:00:00",
-        "movie": None,
-        "cinema_hall": cinema_hall,
-    }
-    defaults.update(params)
-
-    return MovieSession.objects.create(**defaults)
-
-
-def image_upload_url(movie_id):
+def image_upload_url_station(station_id):
     """Return URL for recipe image upload"""
-    return reverse("cinema:movie-upload-image", args=[movie_id])
+    return reverse("train_station:station-upload-image", args=[station_id])
 
 
-def detail_url(movie_id):
-    return reverse("cinema:movie-detail", args=[movie_id])
+def detail_url_station(station_id):
+    return reverse("train_station:station-detail", args=[station_id])
 
 
-class MovieImageUploadTests(TestCase):
+def image_upload_url_train(train_id):
+    """Return URL for recipe image upload"""
+    return reverse("train_station:train-upload-image", args=[train_id])
+
+
+def detail_url_train(train_id):
+    return reverse("train_station:train-detail", args=[train_id])
+
+
+class StationImageUploadTests(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create_superuser(
-            "admin@myproject.com", "password"
+            "my123@project.com", "password"
         )
         self.client.force_authenticate(self.user)
-        self.movie = sample_movie()
-        self.genre = sample_genre()
-        self.actor = sample_actor()
-        self.movie_session = sample_movie_session(movie=self.movie)
+        self.station = sample_station()
 
     def tearDown(self):
-        self.movie.image.delete()
+        self.station.image.delete()
 
-    def test_upload_image_to_movie(self):
-        """Test uploading an image to movie"""
-        url = image_upload_url(self.movie.id)
+    def test_upload_image_to_station(self):
+        """Test uploading an image to station"""
+        url = image_upload_url_station(self.station.id)
         with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
             img = Image.new("RGB", (10, 10))
             img.save(ntf, format="JPEG")
             ntf.seek(0)
             res = self.client.post(url, {"image": ntf}, format="multipart")
-        self.movie.refresh_from_db()
+        self.station.refresh_from_db()
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertIn("image", res.data)
-        self.assertTrue(os.path.exists(self.movie.image.path))
+        self.assertTrue(os.path.exists(self.station.image.path))
 
     def test_upload_image_bad_request(self):
         """Test uploading an invalid image"""
-        url = image_upload_url(self.movie.id)
-        res = self.client.post(url, {"image": "not image"}, format="multipart")
+        url = image_upload_url_station(self.station.id)
+        res = self.client.post(
+            url, {"image": "not image"}, format="multipart"
+        )
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_post_image_to_movie_list(self):
-        url = MOVIE_URL
+    def test_post_image_to_station_list(self):
+        url = STATION_URL
         with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
             img = Image.new("RGB", (10, 10))
             img.save(ntf, format="JPEG")
@@ -100,16 +104,72 @@ class MovieImageUploadTests(TestCase):
             res = self.client.post(
                 url,
                 {
-                    "title": "Title",
-                    "description": "Description",
-                    "duration": 90,
-                    "genres": [1],
-                    "actors": [1],
+                    "name": "The vokzal",
+                    "longitude": 90.3,
+                    "latitude": 32.4,
                     "image": ntf,
                 },
                 format="multipart",
             )
 
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-        movie = Movie.objects.get(title="Title")
-        self.assertFalse(movie.image)
+        station = Station.objects.get(name="The vokzal")
+        self.assertFalse(station.image)
+
+
+class TrainImageUploadTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_superuser(
+            "my123@project.com", "password"
+        )
+        self.client.force_authenticate(self.user)
+        self.train = sample_train()
+        self.train_type = sample_train_type("artillery")
+
+    def tearDown(self):
+        self.train.image.delete()
+
+    def test_upload_image_to_train(self):
+        """Test uploading an image to train"""
+        url = image_upload_url_train(self.train.id)
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
+            img = Image.new("RGB", (10, 10))
+            img.save(ntf, format="JPEG")
+            ntf.seek(0)
+            res = self.client.post(url, {"image": ntf}, format="multipart")
+        self.train.refresh_from_db()
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn("image", res.data)
+        self.assertTrue(os.path.exists(self.train.image.path))
+
+    def test_upload_image_bad_request(self):
+        """Test uploading an invalid image"""
+        url = image_upload_url_train(self.train.id)
+        res = self.client.post(
+            url, {"image": "not image"}, format="multipart"
+        )
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_post_image_to_train_list(self):
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
+            img = Image.new("RGB", (10, 10))
+            img.save(ntf, format="JPEG")
+            ntf.seek(0)
+            res = self.client.post(
+                TRAIN_URL,
+                {
+                    "name": "Le train grand",
+                    "cargo_num": 2,
+                    "places_in_cargo": 15,
+                    "train_type": 2,
+                    "image": ntf,
+                },
+                format="multipart",
+            )
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        train = Train.objects.get(name="Le train grand")
+        self.assertFalse(train.image)
