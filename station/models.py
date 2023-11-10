@@ -3,6 +3,7 @@ import uuid
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator
 from django.db import models
 from django.db.models import UniqueConstraint
 from django.utils.text import slugify
@@ -53,8 +54,8 @@ def station_image_file_path(instance, filename):
 
 class Station(models.Model):
     name = models.CharField(max_length=255, unique=True)
-    latitude = models.FloatField()
-    longitude = models.FloatField()
+    latitude = models.FloatField(validators=[MaxValueValidator(360)])
+    longitude = models.FloatField(validators=[MaxValueValidator(360)])
     image = models.ImageField(null=True, upload_to=station_image_file_path)
 
     class Meta:
