@@ -37,6 +37,14 @@ class PublicStationApiTests(TestCase):
         )
         self.client.force_authenticate(self.user)
 
+    def test_list_returns_correct_data(self):
+        station_one = sample_station(name="first")
+        station_two = sample_station(name="second")
+        res = self.client.get(STATION_URL)
+        serializer = StationListSerializer([station_one, station_two], many=True)
+        self.assertEqual(res.data, serializer.data)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
     def test_list_retrieve_methods_allowed(self):
         sample_station()
         res = self.client.get(STATION_URL)
@@ -45,23 +53,6 @@ class PublicStationApiTests(TestCase):
         res = self.client.get(get_detail_url(1))
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         Station.objects.first().delete()
-
-    """
-    There is something creepy about it. See what happens here.
-    Something similar happens with the api: when creating a new instance,
-    at api/train-station/stations/ that instance will appear only after
-    rerunning the server. How to fix it? 
-    """
-    def test_list_returns_correct_data(self):
-        station_one = sample_station(name="first")
-        print(Station.objects.all())
-        station_two = sample_station(name="second")
-        print(Station.objects.all())
-        res = self.client.get(STATION_URL)
-        print(res.data)
-        serializer = StationListSerializer([station_one, station_two], many=True)
-        self.assertEqual(res.data, serializer.data)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
 
     def test_retrieve_returns_correct_data(self):
         station = sample_station()

@@ -96,6 +96,9 @@ class StationViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = self.queryset
 
+        if self.action == "list":
+            queryset = Station.objects.all()
+
         name = self.request.query_params.get("name")
         if name:
             queryset = queryset.filter(name__icontains=name)
@@ -172,7 +175,7 @@ class RouteViewSet(viewsets.ModelViewSet):
             OpenApiParameter(
                 "source",
                 type=str,
-                description="Filter by source (ex. ?source=Lviv)",
+                description="Filter by sourc (ex. ?source=Lviv)",
             ),
             OpenApiParameter(
                 "destination",
