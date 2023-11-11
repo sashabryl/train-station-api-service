@@ -32,7 +32,9 @@ class Train(models.Model):
     train_type = models.ForeignKey(
         "TrainType", on_delete=models.CASCADE, related_name="trains"
     )
-    image = models.ImageField(null=True, upload_to=train_image_file_path)
+    image = models.ImageField(
+        blank=True, null=True, upload_to=train_image_file_path
+    )
 
     class Meta:
         ordering = ["name"]
@@ -56,11 +58,19 @@ class Station(models.Model):
     name = models.CharField(max_length=255, unique=True)
     latitude = models.FloatField(validators=[MaxValueValidator(360)])
     longitude = models.FloatField(validators=[MaxValueValidator(360)])
-    image = models.ImageField(null=True, upload_to=station_image_file_path)
+    image = models.ImageField(
+        null=True, blank=True, upload_to=station_image_file_path
+    )
 
     class Meta:
         ordering = ["name"]
-
+    
+    def save(
+        self, force_insert=False, force_update=False, using=None, update_fields=None
+    ):
+        self.full_clean()
+        super().save()
+    
     def __str__(self):
         return f"{self.name} ({self.latitude}, {self.longitude})"
 

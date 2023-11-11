@@ -57,7 +57,9 @@ class StationSerializer(serializers.ModelSerializer):
         fields = ("id", "name", "latitude", "longitude")
 
     def create(self, validated_data):
-        return Station.objects.create(**validated_data)
+        station = Station.objects.create(**validated_data)
+        station.refresh_from_db()
+        return station
 
 
 class StationListSerializer(serializers.ModelSerializer):

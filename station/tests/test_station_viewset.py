@@ -19,7 +19,9 @@ def sample_station(**params):
     }
     defaults.update(params)
 
-    return Station.objects.create(**defaults)
+    station = Station.objects.create(**defaults)
+    station.refresh_from_db()
+    return station
 
 
 def get_detail_url(station_id: int):
