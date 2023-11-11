@@ -1,5 +1,3 @@
-import uuid
-
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -7,7 +5,8 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from station.models import Station
-from station.serializers import TrainListSerializer, StationListSerializer, StationDetailSerializer
+from station.serializers import StationListSerializer, StationDetailSerializer
+
 
 STATION_URL = reverse("train_station:station-list")
 
