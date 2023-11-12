@@ -33,7 +33,7 @@ from station.serializers import (
     TrainImageSerializer,
     StationListSerializer,
     StationDetailSerializer,
-    StationImageSerializer,
+    StationImageSerializer, CrewDetailSerializer,
 )
 
 
@@ -193,7 +193,7 @@ class CrewViewSet(viewsets.ModelViewSet):
     queryset = Crew.objects.all()
 
     def get_queryset(self):
-        queryset = self.queryset
+        queryset = Crew.objects.all()
 
         full_name = self.request.query_params.get("full_name")
         if full_name:
@@ -215,6 +215,12 @@ class CrewViewSet(viewsets.ModelViewSet):
                 queryset = search_for_first_name
 
         return queryset
+
+    def get_serializer_class(self):
+        if self.action == "retrieve":
+            return CrewDetailSerializer
+
+        return self.serializer_class
 
     @extend_schema(
         parameters=[

@@ -106,10 +106,14 @@ class RouteDetailSerializer(RouteSerializer):
 class CrewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Crew
-        fields = ("id", "first_name", "last_name")
+        fields = ("id", "first_name", "last_name", "email")
+        extra_kwargs = {"email": {"write_only": True}}
 
-    def create(self, validated_data):
-        return Crew.objects.create(**validated_data)
+
+class CrewDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Crew
+        fields = ("id", "first_name", "last_name", "email")
 
 
 class JourneySerializer(serializers.ModelSerializer):

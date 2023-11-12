@@ -103,6 +103,7 @@ class Route(models.Model):
 class Crew(models.Model):
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
+    email = models.EmailField(blank=True, null=True, unique=True)
 
     class Meta:
         ordering = ["last_name", "first_name"]
