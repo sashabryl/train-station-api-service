@@ -60,6 +60,41 @@ def detail_url_train(train_id):
     return reverse("train-station:train-detail", args=[train_id])
 
 
+class UnauthorizedImageUploadTests(TestCase):
+    def setUp(self) -> None:
+        self.client = APIClient()
+        self.user = get_user_model().objects.create(
+            email="noright@gmail.com", password="e3AWF21!"
+        )
+        self.client.force_authenticate(self.user)
+        self.station = sample_station()
+        self.train = sample_train()
+
+    def test_upload_image_to_station(self):
+        """Test uploading an image to station without any right to do so"""
+        url = image_upload_url_station(self.station.id)
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
+            img = Image.new("RGB", (10, 10))
+            img.save(ntf, format="JPEG")
+            ntf.seek(0)
+            res = self.client.post(url, {"image": ntf}, format="multipart")
+        self.station.refresh_from_db()
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_upload_image_to_train(self):
+        """Test uploading an image to train without any right to do so"""
+        url = image_upload_url_train(self.train.id)
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
+            img = Image.new("RGB", (10, 10))
+            img.save(ntf, format="JPEG")
+            ntf.seek(0)
+            res = self.client.post(url, {"image": ntf}, format="multipart")
+        self.station.refresh_from_db()
+
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+
 class StationImageUploadTests(TestCase):
     def setUp(self):
         self.client = APIClient()

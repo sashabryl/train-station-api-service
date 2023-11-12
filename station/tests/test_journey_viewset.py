@@ -72,19 +72,15 @@ def sample_journey(**params):
         return Journey.objects.create(**defaults)
 
 
-def get_detail_url(route_id: int):
-    return reverse("train-station:journey-detail", args=[route_id])
+def get_detail_url(journey_id: int):
+    return reverse("train-station:journey-detail", args=[journey_id])
 
 
-class PublicJourneyApiTests(TestCase):
+class AnonymousJourneyApiTests(TestCase):
     """Here authenticated and anonymous users have the same level of access"""
 
     def setUp(self):
         self.client = APIClient()
-        self.user = get_user_model().objects.create(
-            email="test@gnail.com", password="!@eawr@3"
-        )
-        self.client.force_authenticate(self.user)
 
     def test_list_retrieve_methods_allowed(self):
         sample_journey()
@@ -217,6 +213,52 @@ class PublicJourneyApiTests(TestCase):
             )
             self.assertEqual(res.status_code, status.HTTP_200_OK)
             self.assertEqual(res.data, at_twelve.data)
+
+    def test_create_method_forbidden(self):
+        sample_train()
+        sample_route()
+        payload = {
+            "train": 1,
+            "route": 1,
+            "departure_time": datetime.datetime.now(),
+        }
+        res = self.client.post(JOURNEY_URL, data=payload)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_update_method_forbidden(self):
+        payload = {
+            "train": 2,
+            "route": 1,
+            "departure_time": datetime.datetime.now(),
+        }
+        sample_train()
+        sample_journey()
+        res = self.client.put(get_detail_url(1), data=payload)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_partial_update_forbidden(self):
+        sample_journey()
+        sample_crew()
+        sample_crew()
+        res = self.client.patch(
+            get_detail_url(1), data={"crew_members": [1, 2]}
+        )
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_delete_method_forbidden(self):
+        sample_journey()
+        res = self.client.delete(get_detail_url(1))
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class PublicJourneyApiTest(TestCase):
+    """Check that authenticated users don't have too much access"""
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create(
+            email="user@hmail.com", password="32r@!rgaf"
+        )
+        self.client.force_authenticate(self.user)
 
     def test_create_method_forbidden(self):
         sample_train()

@@ -23,13 +23,80 @@ def get_detail_url(station_id: int):
     return reverse("train-station:crew-detail", args=[station_id])
 
 
+class AnonymousCrewApiTest(TestCase):
+    def setUp(self) -> None:
+        self.client = APIClient()
+
+    def test_list_method_forbidden(self):
+        res = self.client.get(CREW_URL)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_create_method_forbidden(self):
+        payload = {"first_name": "bob", "last_name": "alice"}
+        res = self.client.post(CREW_URL, data=payload)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_update_method_forbidden(self):
+        payload = {"first_name": "bob", "last_name": "alice"}
+        sample_crew()
+        res = self.client.put(get_detail_url(1), data=payload)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_partial_update_forbidden(self):
+        sample_crew()
+        res = self.client.patch(
+            get_detail_url(1), data={"first_name": "updated"}
+        )
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_delete_method_forbidden(self):
+        sample_crew()
+        res = self.client.delete(get_detail_url(1))
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
 class PublicCrewApiTests(TestCase):
-    """Here authenticated and anonymous users have the same level of access"""
 
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create(
             email="test@gnail.com", password="!@eawr@3"
+        )
+        self.client.force_authenticate(self.user)
+
+    def test_list_method_forbidden(self):
+        res = self.client.get(CREW_URL)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_create_method_forbidden(self):
+        payload = {"first_name": "bob", "last_name": "alice"}
+        res = self.client.post(CREW_URL, data=payload)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_update_method_forbidden(self):
+        payload = {"first_name": "bob", "last_name": "alice"}
+        sample_crew()
+        res = self.client.put(get_detail_url(1), data=payload)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_partial_update_forbidden(self):
+        sample_crew()
+        res = self.client.patch(
+            get_detail_url(1), data={"first_name": "updated"}
+        )
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_delete_method_forbidden(self):
+        sample_crew()
+        res = self.client.delete(get_detail_url(1))
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class AdminCrewApiTest(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_superuser(
+            email="admin@admin.com", password="BAueai32!"
         )
         self.client.force_authenticate(self.user)
 
@@ -72,38 +139,6 @@ class PublicCrewApiTests(TestCase):
 
         alan_serializer = CrewSerializer(alan, many=False)
         self.assertEqual(data, [alan_serializer.data])
-
-    def test_create_method_forbidden(self):
-        payload = {"first_name": "bob", "last_name": "alice"}
-        res = self.client.post(CREW_URL, data=payload)
-        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
-
-    def test_update_method_forbidden(self):
-        payload = {"first_name": "bob", "last_name": "alice"}
-        sample_crew()
-        res = self.client.put(get_detail_url(1), data=payload)
-        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
-
-    def test_partial_update_forbidden(self):
-        sample_crew()
-        res = self.client.patch(
-            get_detail_url(1), data={"first_name": "updated"}
-        )
-        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
-
-    def test_delete_method_forbidden(self):
-        sample_crew()
-        res = self.client.delete(get_detail_url(1))
-        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
-
-
-class AdminCrewApiTest(TestCase):
-    def setUp(self):
-        self.client = APIClient()
-        self.user = get_user_model().objects.create_superuser(
-            email="admin@admin.com", password="BAueai32!"
-        )
-        self.client.force_authenticate(self.user)
 
     def test_create_allowed(self):
         payload = {

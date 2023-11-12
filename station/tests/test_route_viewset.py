@@ -38,15 +38,11 @@ def get_detail_url(route_id: int):
     return reverse("train-station:route-detail", args=[route_id])
 
 
-class PublicRouteApiTests(TestCase):
+class AnonymousRouteApiTests(TestCase):
     """Here authenticated and anonymous users have the same level of access"""
 
     def setUp(self):
         self.client = APIClient()
-        self.user = get_user_model().objects.create(
-            email="test@gnail.com", password="!@eawr@3"
-        )
-        self.client.force_authenticate(self.user)
 
     def test_list_retrieve_methods_allowed(self):
         sample_route()
@@ -92,6 +88,45 @@ class PublicRouteApiTests(TestCase):
         to_second = RouteListSerializer([route_one, route_three], many=True)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, to_second.data)
+
+    def test_create_method_forbidden(self):
+        payload = {
+            "source": sample_station(name="first"),
+            "destination": sample_station(name="second"),
+            "distance": 100,
+        }
+        res = self.client.post(ROUTE_URL, data=payload)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_update_method_forbidden(self):
+        payload = {
+            "source": sample_station(name="third"),
+            "destination": sample_station(name="fourth"),
+            "distance": 200,
+        }
+        sample_route()
+        res = self.client.put(get_detail_url(1), data=payload)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_partial_update_forbidden(self):
+        sample_route()
+        res = self.client.patch(get_detail_url(1), data={"distance": 300})
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_delete_method_forbidden(self):
+        sample_route()
+        res = self.client.delete(get_detail_url(1))
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class PublicRouteApiTests(TestCase):
+    """Check that users don't have too much access"""
+    def setUp(self) -> None:
+        self.client = APIClient()
+        self.user = get_user_model().objects.create(
+            email="feaioj@fjaeio.com", password="324ewae1!"
+        )
+        self.client.force_authenticate(self.user)
 
     def test_create_method_forbidden(self):
         payload = {

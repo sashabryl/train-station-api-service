@@ -28,15 +28,11 @@ def get_detail_url(station_id: int):
     return reverse("train-station:station-detail", args=[station_id])
 
 
-class PublicStationApiTests(TestCase):
+class AnonymousStationApiTests(TestCase):
     """Here authenticated and anonymous users have the same level of access"""
 
     def setUp(self):
         self.client = APIClient()
-        self.user = get_user_model().objects.create(
-            email="test@gnail.com", password="!@eawr@3"
-        )
-        self.client.force_authenticate(self.user)
 
     def test_list_returns_correct_data(self):
         station_one = sample_station(name="first")
@@ -75,6 +71,45 @@ class PublicStationApiTests(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
+
+    def test_create_method_forbidden(self):
+        payload = {
+            "name": "station",
+            "latitude": 23.5,
+            "longitude": 10.3,
+        }
+        res = self.client.post(STATION_URL, data=payload)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_update_method_forbidden(self):
+        payload = {
+            "name": "station",
+            "latitude": 23.5,
+            "longitude": 10.3,
+        }
+        sample_station()
+        res = self.client.put(get_detail_url(1), data=payload)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_partial_update_forbidden(self):
+        sample_station()
+        res = self.client.patch(get_detail_url(1), data={"name": "updated"})
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_delete_method_forbidden(self):
+        sample_station()
+        res = self.client.delete(get_detail_url(1))
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class PublicStationApiTests(TestCase):
+    """See to it that users don't can too much"""
+    def setUp(self) -> None:
+        self.client = APIClient()
+        self.user = get_user_model().objects.create(
+            email="test@gnail.com", password="!@eawr@3"
+        )
+        self.client.force_authenticate(self.user)
 
     def test_create_method_forbidden(self):
         payload = {

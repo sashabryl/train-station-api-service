@@ -2,7 +2,7 @@ from django.db.models import Q, F, Count
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework.mixins import ListModelMixin, CreateModelMixin
+from rest_framework.mixins import ListModelMixin, CreateModelMixin, RetrieveModelMixin
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
@@ -192,6 +192,7 @@ class RouteViewSet(viewsets.ModelViewSet):
 class CrewViewSet(viewsets.ModelViewSet):
     serializer_class = CrewSerializer
     queryset = Crew.objects.all()
+    permission_classes = [IsAdminUser]
 
     def get_queryset(self):
         queryset = Crew.objects.all()
@@ -328,7 +329,13 @@ class OrderPagination(PageNumberPagination):
     max_page_size = 100
 
 
-class OrderViewSet(viewsets.GenericViewSet, ListModelMixin, CreateModelMixin):
+class OrderViewSet(
+    viewsets.GenericViewSet,
+    RetrieveModelMixin,
+    ListModelMixin,
+    CreateModelMixin,
+
+):
     serializer_class = OrderSerializer
     queryset = Order.objects.prefetch_related(
         "tickets__journey__route__source",
