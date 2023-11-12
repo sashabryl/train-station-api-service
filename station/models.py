@@ -64,13 +64,17 @@ class Station(models.Model):
 
     class Meta:
         ordering = ["name"]
-    
+
     def save(
-        self, force_insert=False, force_update=False, using=None, update_fields=None
+        self,
+        force_insert=False,
+        force_update=False,
+        using=None,
+        update_fields=None,
     ):
         self.full_clean()
         super().save()
-    
+
     def __str__(self):
         return f"{self.name} ({self.latitude}, {self.longitude})"
 

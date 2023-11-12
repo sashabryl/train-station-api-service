@@ -11,8 +11,8 @@ from rest_framework.test import APIClient
 from station.models import Station, TrainType, Train
 
 
-STATION_URL = reverse("train_station:station-list")
-TRAIN_URL = reverse("train_station:train-list")
+STATION_URL = reverse("train-station:station-list")
+TRAIN_URL = reverse("train-station:train-list")
 
 
 def sample_station(**params):
@@ -44,20 +44,20 @@ def sample_train(**params):
 
 def image_upload_url_station(station_id):
     """Return URL for recipe image upload"""
-    return reverse("train_station:station-upload-image", args=[station_id])
+    return reverse("train-station:station-upload-image", args=[station_id])
 
 
 def detail_url_station(station_id):
-    return reverse("train_station:station-detail", args=[station_id])
+    return reverse("train-station:station-detail", args=[station_id])
 
 
 def image_upload_url_train(train_id):
     """Return URL for recipe image upload"""
-    return reverse("train_station:train-upload-image", args=[train_id])
+    return reverse("train-station:train-upload-image", args=[train_id])
 
 
 def detail_url_train(train_id):
-    return reverse("train_station:train-detail", args=[train_id])
+    return reverse("train-station:train-detail", args=[train_id])
 
 
 class StationImageUploadTests(TestCase):

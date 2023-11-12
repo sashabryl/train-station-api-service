@@ -9,7 +9,7 @@ from rest_framework.test import APIClient
 from station.models import TrainType, Train
 from station.serializers import TrainListSerializer
 
-TRAIN_URL = reverse("train_station:train-list")
+TRAIN_URL = reverse("train-station:train-list")
 
 
 def sample_train_type():
@@ -29,11 +29,12 @@ def sample_train(**params):
 
 
 def get_detail_url(train_id: int):
-    return reverse("train_station:train-detail", args=[train_id])
+    return reverse("train-station:train-detail", args=[train_id])
 
 
 class PublicTrainApiTests(TestCase):
     """Here authenticated and anonymous users have the same level of access"""
+
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create(
@@ -81,7 +82,7 @@ class PublicTrainApiTests(TestCase):
             "name": "train",
             "cargo_num": 9,
             "places_in_cargo": 10,
-            "train_type": sample_train_type()
+            "train_type": sample_train_type(),
         }
         res = self.client.post(TRAIN_URL, data=payload)
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
@@ -91,7 +92,7 @@ class PublicTrainApiTests(TestCase):
             "name": "train",
             "cargo_num": 9,
             "places_in_cargo": 10,
-            "train_type": sample_train_type()
+            "train_type": sample_train_type(),
         }
         sample_train()
         res = self.client.put(get_detail_url(1), data=payload)
@@ -107,6 +108,7 @@ class PublicTrainApiTests(TestCase):
         res = self.client.delete(get_detail_url(1))
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
+
 class AdminTrainApiTest(TestCase):
     def setUp(self):
         self.client = APIClient()
@@ -121,7 +123,7 @@ class AdminTrainApiTest(TestCase):
             "name": "train",
             "cargo_num": 9,
             "places_in_cargo": 10,
-            "train_type": 1
+            "train_type": 1,
         }
         res = self.client.post(TRAIN_URL, data=payload)
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
@@ -132,7 +134,7 @@ class AdminTrainApiTest(TestCase):
             "name": "train",
             "cargo_num": 9,
             "places_in_cargo": 10,
-            "train_type": 1
+            "train_type": 1,
         }
         res = self.client.put(get_detail_url(1), data=payload)
         self.assertEqual(res.status_code, status.HTTP_200_OK)

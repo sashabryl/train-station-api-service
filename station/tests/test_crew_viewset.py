@@ -9,25 +9,23 @@ from rest_framework.test import APIClient
 from station.models import Crew
 from station.serializers import CrewSerializer, CrewDetailSerializer
 
-CREW_URL = reverse("train_station:crew-list")
+CREW_URL = reverse("train-station:crew-list")
 
 
 def sample_crew(**params):
-    defaults = {
-        "first_name": "sasha",
-        "last_name": "bryl"
-    }
+    defaults = {"first_name": "sasha", "last_name": "bryl"}
     defaults.update(params)
 
     return Crew.objects.create(**defaults)
 
 
 def get_detail_url(station_id: int):
-    return reverse("train_station:crew-detail", args=[station_id])
+    return reverse("train-station:crew-detail", args=[station_id])
 
 
 class PublicCrewApiTests(TestCase):
     """Here authenticated and anonymous users have the same level of access"""
+
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create(
@@ -64,9 +62,7 @@ class PublicCrewApiTests(TestCase):
         alice = sample_crew(first_name="Alice", last_name="Robertson")
 
         res = self.client.get(CREW_URL, data={"full_name": "robe"})
-        siblings = CrewSerializer(
-            [alice, bob], many=True
-        )
+        siblings = CrewSerializer([alice, bob], many=True)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, siblings.data)
@@ -78,25 +74,21 @@ class PublicCrewApiTests(TestCase):
         self.assertEqual(data, [alan_serializer.data])
 
     def test_create_method_forbidden(self):
-        payload = {
-            "first_name": "bob",
-            "last_name": "alice"
-        }
+        payload = {"first_name": "bob", "last_name": "alice"}
         res = self.client.post(CREW_URL, data=payload)
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_update_method_forbidden(self):
-        payload = {
-            "first_name": "bob",
-            "last_name": "alice"
-        }
+        payload = {"first_name": "bob", "last_name": "alice"}
         sample_crew()
         res = self.client.put(get_detail_url(1), data=payload)
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_partial_update_forbidden(self):
         sample_crew()
-        res = self.client.patch(get_detail_url(1), data={"first_name": "updated"})
+        res = self.client.patch(
+            get_detail_url(1), data={"first_name": "updated"}
+        )
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_delete_method_forbidden(self):

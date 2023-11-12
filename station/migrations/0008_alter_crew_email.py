@@ -12,6 +12,8 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="crew",
             name="email",
-            field=models.EmailField(blank=True, max_length=254, null=True, unique=True),
+            field=models.EmailField(
+                blank=True, max_length=254, null=True, unique=True
+            ),
         ),
     ]

@@ -33,7 +33,8 @@ from station.serializers import (
     TrainImageSerializer,
     StationListSerializer,
     StationDetailSerializer,
-    StationImageSerializer, CrewDetailSerializer,
+    StationImageSerializer,
+    CrewDetailSerializer,
 )
 
 
@@ -264,7 +265,7 @@ class JourneyViewSet(viewsets.ModelViewSet):
 
         if destination:
             queryset = queryset.filter(
-                route__destination__name__icontains=source
+                route__destination__name__icontains=destination
             )
 
         if departure_date:

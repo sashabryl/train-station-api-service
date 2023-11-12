@@ -8,7 +8,7 @@ from station.models import Station, Route
 from station.serializers import RouteListSerializer, RouteDetailSerializer
 
 
-ROUTE_URL = reverse("train_station:route-list")
+ROUTE_URL = reverse("train-station:route-list")
 
 
 def sample_station(**params):
@@ -23,7 +23,7 @@ def sample_station(**params):
 
 
 def sample_route(
-        source_n: str = "first", destination_n: str = "second", **params
+    source_n: str = "first", destination_n: str = "second", **params
 ):
     defaults = {
         "source": sample_station(name=source_n),
@@ -35,11 +35,12 @@ def sample_route(
 
 
 def get_detail_url(route_id: int):
-    return reverse("train_station:route-detail", args=[route_id])
+    return reverse("train-station:route-detail", args=[route_id])
 
 
 class PublicRouteApiTests(TestCase):
     """Here authenticated and anonymous users have the same level of access"""
+
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create(
@@ -59,7 +60,7 @@ class PublicRouteApiTests(TestCase):
         route_one = sample_route()
         route_two = sample_route(
             source=sample_station(name="third"),
-            destination=sample_station(name="fourth")
+            destination=sample_station(name="fourth"),
         )
         res = self.client.get(ROUTE_URL)
         serializer = RouteListSerializer([route_one, route_two], many=True)
@@ -82,9 +83,7 @@ class PublicRouteApiTests(TestCase):
         route_three = sample_route(source=third, destination=second)
 
         res = self.client.get(ROUTE_URL, data={"source": "third"})
-        from_third = RouteListSerializer(
-            [route_three, route_two], many=True
-        )
+        from_third = RouteListSerializer([route_three, route_two], many=True)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, from_third.data)
@@ -124,7 +123,7 @@ class PublicRouteApiTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
 
-class AdminStationApiTest(TestCase):
+class AdminRouteApiTest(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create_superuser(

@@ -25,4 +25,4 @@ urlpatterns = [
     path("", include(router.urls)),
 ]
 
-app_name = "train_station"
+app_name = "train-station"

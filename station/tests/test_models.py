@@ -8,7 +8,5 @@ class StationModelTest(TestCase):
     def test_longitude_latitude_validation(self):
         with self.assertRaises(ValidationError):
             Station.objects.create(
-                name="station",
-                longitude=361,
-                latitude=32.4
+                name="station", longitude=361, latitude=32.4
             )

@@ -61,7 +61,7 @@ class StationSerializer(serializers.ModelSerializer):
         station = Station(
             name=validated_data.get("name"),
             latitude=validated_data.get("latitude"),
-            longitude=validated_data.get("longitude")
+            longitude=validated_data.get("longitude"),
         )
         station.save()
         return station

@@ -14,14 +14,18 @@ class Migration(migrations.Migration):
             model_name="station",
             name="image",
             field=models.ImageField(
-                blank=True, null=True, upload_to=station.models.station_image_file_path
+                blank=True,
+                null=True,
+                upload_to=station.models.station_image_file_path,
             ),
         ),
         migrations.AlterField(
             model_name="train",
             name="image",
             field=models.ImageField(
-                blank=True, null=True, upload_to=station.models.train_image_file_path
+                blank=True,
+                null=True,
+                upload_to=station.models.train_image_file_path,
             ),
         ),
     ]

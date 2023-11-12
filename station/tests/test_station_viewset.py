@@ -8,7 +8,7 @@ from station.models import Station
 from station.serializers import StationListSerializer, StationDetailSerializer
 
 
-STATION_URL = reverse("train_station:station-list")
+STATION_URL = reverse("train-station:station-list")
 
 
 def sample_station(**params):
@@ -25,11 +25,12 @@ def sample_station(**params):
 
 
 def get_detail_url(station_id: int):
-    return reverse("train_station:station-detail", args=[station_id])
+    return reverse("train-station:station-detail", args=[station_id])
 
 
 class PublicStationApiTests(TestCase):
     """Here authenticated and anonymous users have the same level of access"""
+
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create(
@@ -41,7 +42,9 @@ class PublicStationApiTests(TestCase):
         station_one = sample_station(name="first")
         station_two = sample_station(name="second")
         res = self.client.get(STATION_URL)
-        serializer = StationListSerializer([station_one, station_two], many=True)
+        serializer = StationListSerializer(
+            [station_one, station_two], many=True
+        )
         self.assertEqual(res.data, serializer.data)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
