@@ -107,6 +107,7 @@ class AnonymousTrainApiTests(TestCase):
 
 class PublicTrainApiTests(TestCase):
     """Check for social equality rights observance"""
+
     def setUp(self) -> None:
         self.client = APIClient()
         self.user = get_user_model().objects.create(

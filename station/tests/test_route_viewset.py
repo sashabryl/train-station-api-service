@@ -121,6 +121,7 @@ class AnonymousRouteApiTests(TestCase):
 
 class PublicRouteApiTests(TestCase):
     """Check that users don't have too much access"""
+
     def setUp(self) -> None:
         self.client = APIClient()
         self.user = get_user_model().objects.create(

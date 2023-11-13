@@ -333,7 +333,6 @@ class OrderViewSet(
     viewsets.GenericViewSet,
     ListModelMixin,
     CreateModelMixin,
-
 ):
     serializer_class = OrderSerializer
     queryset = Order.objects.prefetch_related(

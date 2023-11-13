@@ -104,6 +104,7 @@ class AnonymousStationApiTests(TestCase):
 
 class PublicStationApiTests(TestCase):
     """See to it that users don't can too much"""
+
     def setUp(self) -> None:
         self.client = APIClient()
         self.user = get_user_model().objects.create(

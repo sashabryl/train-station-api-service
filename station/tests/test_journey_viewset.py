@@ -253,6 +253,7 @@ class AnonymousJourneyApiTests(TestCase):
 
 class PublicJourneyApiTest(TestCase):
     """Check that authenticated users don't have too much access"""
+
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create(

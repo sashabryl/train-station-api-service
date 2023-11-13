@@ -56,7 +56,6 @@ class AnonymousCrewApiTest(TestCase):
 
 
 class PublicCrewApiTests(TestCase):
-
     def setUp(self):
         self.client = APIClient()
         self.user = get_user_model().objects.create(

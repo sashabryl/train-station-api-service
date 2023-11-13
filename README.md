@@ -76,3 +76,7 @@ http://127.0.0.1:8000/api/schema/swagger/
 ```bash
 python manage.py test
 ```
+## DEMO
+![Screenshot1](schema_1.png)
+![Screenshot2](schema_2.png)
+![Screenshot3](schema_3.png)
