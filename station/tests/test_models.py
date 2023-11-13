@@ -6,7 +6,16 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import TestCase, override_settings
 
-from station.models import Station, Journey, Ticket, Order, Route, Crew, Train, TrainType
+from station.models import (
+    Station,
+    Journey,
+    Ticket,
+    Order,
+    Route,
+    Crew,
+    Train,
+    TrainType,
+)
 
 
 def sample_train_type():

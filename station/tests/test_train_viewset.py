@@ -1,10 +1,10 @@
+import json
 import uuid
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.test import APIClient
+from rest_framework.test import APITestCase
 
 from station.models import TrainType, Train
 from station.serializers import TrainListSerializer
@@ -29,14 +29,11 @@ def sample_train(**params):
 
 
 def get_detail_url(train_id: int):
-    return reverse("train-station:train-detail", args=[train_id])
+    return reverse("train-station:train-detail", kwargs={"pk": train_id})
 
 
-class AnonymousTrainApiTests(TestCase):
+class AnonymousTrainApiTests(APITestCase):
     """Here authenticated and anonymous users have the same level of access"""
-
-    def setUp(self):
-        self.client = APIClient()
 
     def test_list_retrieve_methods_allowed(self):
         sample_train()
@@ -58,6 +55,7 @@ class AnonymousTrainApiTests(TestCase):
     def test_retrieve_returns_correct_data(self):
         train = sample_train()
         serializer = TrainListSerializer(train, many=False)
+        train.refresh_from_db()
         res = self.client.get(get_detail_url(1))
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
@@ -67,36 +65,54 @@ class AnonymousTrainApiTests(TestCase):
         train_two = sample_train(name="train2")
         train_three = sample_train(name="bike")
 
-        res = self.client.get(TRAIN_URL, data={"name": "train"})
+        res = self.client.get(
+            TRAIN_URL,
+            data={"name": "train"},
+            content_type="application/json",
+        )
         serializer = TrainListSerializer([train_one, train_two], many=True)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
 
     def test_create_method_forbidden(self):
-        payload = {
-            "name": "train",
-            "cargo_num": 9,
-            "places_in_cargo": 10,
-            "train_type": sample_train_type(),
-        }
-        res = self.client.post(TRAIN_URL, data=payload)
+        sample_train_type()
+        payload = json.dumps(
+            {
+                "name": "train",
+                "cargo_num": 9,
+                "places_in_cargo": 10,
+                "train_type": 1,
+            }
+        )
+        res = self.client.post(
+            TRAIN_URL, data=payload, content_type="application/json"
+        )
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_update_method_forbidden(self):
-        payload = {
-            "name": "train",
-            "cargo_num": 9,
-            "places_in_cargo": 10,
-            "train_type": sample_train_type(),
-        }
+        sample_train_type()
+        payload = json.dumps(
+            {
+                "name": "train",
+                "cargo_num": 9,
+                "places_in_cargo": 10,
+                "train_type": 1,
+            }
+        )
         sample_train()
-        res = self.client.put(get_detail_url(1), data=payload)
+        res = self.client.put(
+            get_detail_url(1), data=payload, content_type="application/json"
+        )
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_partial_update_forbidden(self):
         sample_train()
-        res = self.client.patch(get_detail_url(1), data={"name": "updated"})
+        res = self.client.patch(
+            get_detail_url(1),
+            data=json.dumps({"name": "updated"}),
+            content_type="application/json",
+        )
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_delete_method_forbidden(self):
@@ -105,39 +121,56 @@ class AnonymousTrainApiTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-class PublicTrainApiTests(TestCase):
+class PublicTrainApiTests(APITestCase):
     """Check for social equality rights observance"""
+
     def setUp(self) -> None:
-        self.client = APIClient()
-        self.user = get_user_model().objects.create(
+        self.client.force_authenticate(self.user)
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = get_user_model().objects.create(
             email="test@gnail.com", password="!@eawr@3"
         )
-        self.client.force_authenticate(self.user)
 
     def test_create_method_forbidden(self):
-        payload = {
-            "name": "train",
-            "cargo_num": 9,
-            "places_in_cargo": 10,
-            "train_type": sample_train_type(),
-        }
-        res = self.client.post(TRAIN_URL, data=payload)
+        sample_train_type()
+        payload = json.dumps(
+            {
+                "name": "train",
+                "cargo_num": 9,
+                "places_in_cargo": 10,
+                "train_type": 1,
+            }
+        )
+        res = self.client.post(
+            TRAIN_URL, data=payload, content_type="application/json"
+        )
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_update_method_forbidden(self):
-        payload = {
-            "name": "train",
-            "cargo_num": 9,
-            "places_in_cargo": 10,
-            "train_type": sample_train_type(),
-        }
+        sample_train_type()
+        payload = json.dumps(
+            {
+                "name": "train",
+                "cargo_num": 9,
+                "places_in_cargo": 10,
+                "train_type": 1,
+            }
+        )
         sample_train()
-        res = self.client.put(get_detail_url(1), data=payload)
+        res = self.client.put(
+            get_detail_url(1), data=payload, content_type="application/json"
+        )
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_partial_update_forbidden(self):
         sample_train()
-        res = self.client.patch(get_detail_url(1), data={"name": "updated"})
+        res = self.client.patch(
+            get_detail_url(1),
+            data=json.dumps({"name": "updated"}),
+            content_type="application/json",
+        )
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_delete_method_forbidden(self):
@@ -146,34 +179,46 @@ class PublicTrainApiTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
 
-class AdminTrainApiTest(TestCase):
+class AdminTrainApiTest(APITestCase):
     def setUp(self):
-        self.client = APIClient()
-        self.user = get_user_model().objects.create_superuser(
+        self.client.force_authenticate(self.user)
+        self.train_type = sample_train_type()
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = get_user_model().objects.create_superuser(
             email="admin@admin.com", password="BAueai32!"
         )
-        self.client.force_authenticate(self.user)
 
     def test_create_allowed(self):
         sample_train_type()
-        payload = {
-            "name": "train",
-            "cargo_num": 9,
-            "places_in_cargo": 10,
-            "train_type": 1,
-        }
-        res = self.client.post(TRAIN_URL, data=payload)
+        payload = json.dumps(
+            {
+                "name": "train",
+                "cargo_num": 9,
+                "places_in_cargo": 10,
+                "train_type": 1,
+            }
+        )
+        res = self.client.post(
+            TRAIN_URL, data=payload, content_type="application/json"
+        )
+        print(res.data)
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
 
     def test_update_partial_update_allowed(self):
         sample_train()
-        payload = {
-            "name": "train",
-            "cargo_num": 9,
-            "places_in_cargo": 10,
-            "train_type": 1,
-        }
-        res = self.client.put(get_detail_url(1), data=payload)
+        payload = json.dumps(
+            {
+                "name": "train",
+                "cargo_num": 9,
+                "places_in_cargo": 10,
+                "train_type": 1,
+            }
+        )
+        res = self.client.put(
+            get_detail_url(1), data=payload, content_type="application/json"
+        )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
         res = self.client.patch(get_detail_url(1), data={"name": "new"})

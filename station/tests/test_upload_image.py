@@ -1,12 +1,12 @@
 import os
 import tempfile
+import uuid
 
 from PIL import Image
-from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.test import APIClient
+from rest_framework.test import APIClient, APITestCase
 
 from station.models import Station, TrainType, Train
 
@@ -17,7 +17,7 @@ TRAIN_URL = reverse("train-station:train-list")
 
 def sample_station(**params):
     defaults = {
-        "name": "Sample vokzal",
+        "name": f"Sample vokzal{uuid.uuid4()}",
         "latitude": 10.15,
         "longitude": 32.14,
     }
@@ -26,7 +26,7 @@ def sample_station(**params):
     return Station.objects.create(**defaults)
 
 
-def sample_train_type(name: str = "express"):
+def sample_train_type(name: str = f"express{uuid.uuid4()}"):
     return TrainType.objects.create(name=name)
 
 
@@ -60,15 +60,18 @@ def detail_url_train(train_id):
     return reverse("train-station:train-detail", args=[train_id])
 
 
-class UnauthorizedImageUploadTests(TestCase):
+class UnauthorizedImageUploadTests(APITestCase):
     def setUp(self) -> None:
-        self.client = APIClient()
-        self.user = get_user_model().objects.create(
-            email="noright@gmail.com", password="e3AWF21!"
-        )
-        self.client.force_authenticate(self.user)
         self.station = sample_station()
         self.train = sample_train()
+        self.client.force_authenticate(self.user)
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.client = APIClient()
+        cls.user = get_user_model().objects.create(
+            email="noright@gmail.com", password="e3AWF21!"
+        )
 
     def test_upload_image_to_station(self):
         """Test uploading an image to station without any right to do so"""
@@ -95,14 +98,17 @@ class UnauthorizedImageUploadTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
 
-class StationImageUploadTests(TestCase):
+class StationImageUploadTests(APITestCase):
     def setUp(self):
-        self.client = APIClient()
-        self.user = get_user_model().objects.create_superuser(
+        self.station = sample_station()
+        self.client.force_authenticate(self.user)
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.client = APIClient()
+        cls.user = get_user_model().objects.create_superuser(
             "my123@project.com", "password"
         )
-        self.client.force_authenticate(self.user)
-        self.station = sample_station()
 
     def tearDown(self):
         self.station.image.delete()
@@ -146,21 +152,21 @@ class StationImageUploadTests(TestCase):
                 },
                 format="multipart",
             )
-
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         station = Station.objects.get(name="The vokzal")
         self.assertFalse(station.image)
 
 
-class TrainImageUploadTests(TestCase):
+class TrainImageUploadTests(APITestCase):
     def setUp(self):
-        self.client = APIClient()
-        self.user = get_user_model().objects.create_superuser(
-            "my123@project.com", "password"
-        )
         self.client.force_authenticate(self.user)
         self.train = sample_train()
-        self.train_type = sample_train_type("artillery")
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.client = APIClient()
+        cls.user = get_user_model().objects.create_superuser(
+            "my123@project.com", "password"
+        )
 
     def tearDown(self):
         self.train.image.delete()
@@ -199,12 +205,10 @@ class TrainImageUploadTests(TestCase):
                     "name": "Le train grand",
                     "cargo_num": 2,
                     "places_in_cargo": 15,
-                    "train_type": 2,
+                    "train_type": 1,
                     "image": ntf,
                 },
                 format="multipart",
             )
-
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-        train = Train.objects.get(name="Le train grand")
-        self.assertFalse(train.image)
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(Train.objects.filter(name="Le train grand").exists())

@@ -8,9 +8,18 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse, NoReverseMatch
 from rest_framework import status
 
-from station.models import Train, Station, Route, Crew, TrainType, Journey, Order, Ticket
-from django.test import TestCase, override_settings
-from rest_framework.test import APIClient
+from station.models import (
+    Train,
+    Station,
+    Route,
+    Crew,
+    TrainType,
+    Journey,
+    Order,
+    Ticket,
+)
+from django.test import override_settings
+from rest_framework.test import APITestCase
 
 from station.serializers import OrderListSerializer
 
@@ -92,13 +101,13 @@ def create_order(user):
     return Order.objects.create(user=user)
 
 
-class AnonymousOrderApiTest(TestCase):
-    def setUp(self):
-        self.client = APIClient()
-        self.user = get_user_model().objects.create(
+class AnonymousOrderApiTest(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = get_user_model().objects.create(
             email="user@hmail.com", password="efeai341@"
         )
-        order = create_order(self.user)
+        order = create_order(cls.user)
         create_ticket(order)
 
     def test_list_forbidden(self):
@@ -106,12 +115,14 @@ class AnonymousOrderApiTest(TestCase):
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-class PublicOrderApiTests(TestCase):
-    def setUp(self) -> None:
-        self.client = APIClient()
-        self.user = get_user_model().objects.create(
+class PublicOrderApiTests(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = get_user_model().objects.create(
             email="user@gmali.com", password="dea@#31f"
         )
+
+    def setUp(self) -> None:
         self.client.force_authenticate(self.user)
 
     def test_detail_page_not_exists(self):
@@ -126,30 +137,34 @@ class PublicOrderApiTests(TestCase):
         time.sleep(0.5)
         order_two = create_order(self.user)
         create_ticket(order_two, seat=2)
-        my_orders = OrderListSerializer([order_one, order_two], many=True)
+        my_order_one  = OrderListSerializer(order_one, many=False)
+        my_order_two = OrderListSerializer(order_two, many=False)
 
         another_user = get_user_model().objects.create(
             email="someone@gmoal.com", password="dewaf@#132"
         )
         order_three = create_order(another_user)
         create_ticket(order_three, seat=3)
+        not_my_order = OrderListSerializer(order_three, many=False)
 
         res = self.client.get(ORDER_URL)
         results = json.loads(json.dumps(res.data)).get("results")
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(results[0], my_orders.data[1])
-        self.assertEqual(results[1], my_orders.data[0])
-    #
-    # def test_create_method_works(self):
-    #     sample_journey()
-    #     payload = {
-    #         "tickets": [
-    #             {"seat": 1, "cargo": 1, "journey": 1},
-    #         ],
-    #     }
-    #     res = self.client.post(ORDER_URL, data=payload)
-    #     print(res.data)
-    #     self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-    #     self.assertTrue(Order.objects.filter(user=self.user).exists())
-    #
-    #
+        self.assertIn(my_order_one.data, results)
+        self.assertIn(my_order_two.data, results)
+        self.assertNotIn(not_my_order.data, results)
+
+    def test_create_method_works(self):
+        sample_journey()
+        payload = json.dumps(
+            {
+                "tickets": [
+                    {"seat": 1, "cargo": 1, "journey": 1},
+                ],
+            }
+        )
+        res = self.client.post(
+            ORDER_URL, data=payload, content_type="application/json"
+        )
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(Order.objects.filter(user=self.user).exists())

@@ -1,8 +1,10 @@
+import json
+import uuid
+
 from django.contrib.auth import get_user_model
-from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.test import APIClient
+from rest_framework.test import APITestCase
 
 from station.models import Station, Route
 from station.serializers import RouteListSerializer, RouteDetailSerializer
@@ -13,7 +15,7 @@ ROUTE_URL = reverse("train-station:route-list")
 
 def sample_station(**params):
     defaults = {
-        "name": "Sample vokzal",
+        "name": f"Sample vokzal{uuid.uuid4()}",
         "latitude": 10.15,
         "longitude": 32.14,
     }
@@ -38,11 +40,8 @@ def get_detail_url(route_id: int):
     return reverse("train-station:route-detail", args=[route_id])
 
 
-class AnonymousRouteApiTests(TestCase):
+class AnonymousRouteApiTests(APITestCase):
     """Here authenticated and anonymous users have the same level of access"""
-
-    def setUp(self):
-        self.client = APIClient()
 
     def test_list_retrieve_methods_allowed(self):
         sample_route()
@@ -78,39 +77,65 @@ class AnonymousRouteApiTests(TestCase):
         route_two = sample_route(source=third, destination_n="fourth")
         route_three = sample_route(source=third, destination=second)
 
-        res = self.client.get(ROUTE_URL, data={"source": "third"})
+        res = self.client.generic(
+            "GET",
+            ROUTE_URL,
+            data=json.dumps({"source": "third"}),
+            content_type="application/json",
+        )
         from_third = RouteListSerializer([route_three, route_two], many=True)
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, from_third.data)
 
-        res = self.client.get(ROUTE_URL, data={"destination": "second"})
+        res = self.client.generic(
+            "GET",
+            ROUTE_URL,
+            data=json.dumps({"destination": "second"}),
+            content_type="application/json",
+        )
         to_second = RouteListSerializer([route_one, route_three], many=True)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, to_second.data)
 
     def test_create_method_forbidden(self):
-        payload = {
-            "source": sample_station(name="first"),
-            "destination": sample_station(name="second"),
-            "distance": 100,
-        }
-        res = self.client.post(ROUTE_URL, data=payload)
+        sample_station()
+        sample_station()
+        payload = json.dumps(
+            {
+                "source": 1,
+                "destination": 2,
+                "distance": 100,
+            }
+        )
+        res = self.client.post(
+            ROUTE_URL, data=payload, content_type="application/json"
+        )
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_update_method_forbidden(self):
-        payload = {
-            "source": sample_station(name="third"),
-            "destination": sample_station(name="fourth"),
-            "distance": 200,
-        }
+        sample_station()
+        sample_station()
+        payload = json.dumps(
+            {
+                "source": 1,
+                "destination": 2,
+                "distance": 200,
+            }
+        )
         sample_route()
-        res = self.client.put(get_detail_url(1), data=payload)
+        res = self.client.put(
+            get_detail_url(1), data=payload, content_type="application/json"
+        )
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_partial_update_forbidden(self):
         sample_route()
-        res = self.client.patch(get_detail_url(1), data={"distance": 300})
+        res = self.client.patch(
+            get_detail_url(1),
+            data=json.dumps({"distance": 300}),
+            content_type="application/json",
+        )
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_delete_method_forbidden(self):
@@ -119,37 +144,56 @@ class AnonymousRouteApiTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-class PublicRouteApiTests(TestCase):
+class PublicRouteApiTests(APITestCase):
     """Check that users don't have too much access"""
-    def setUp(self) -> None:
-        self.client = APIClient()
-        self.user = get_user_model().objects.create(
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = get_user_model().objects.create(
             email="feaioj@fjaeio.com", password="324ewae1!"
         )
+
+    def setUp(self) -> None:
         self.client.force_authenticate(self.user)
 
     def test_create_method_forbidden(self):
-        payload = {
-            "source": sample_station(name="first"),
-            "destination": sample_station(name="second"),
-            "distance": 100,
-        }
-        res = self.client.post(ROUTE_URL, data=payload)
+        sample_station()
+        sample_station()
+        payload = json.dumps(
+            {
+                "source": 1,
+                "destination": 2,
+                "distance": 100,
+            }
+        )
+        res = self.client.post(
+            ROUTE_URL, data=payload, content_type="application/json"
+        )
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_update_method_forbidden(self):
-        payload = {
-            "source": sample_station(name="third"),
-            "destination": sample_station(name="fourth"),
-            "distance": 200,
-        }
+        sample_station()
+        sample_station()
+        payload = json.dumps(
+            {
+                "source": 1,
+                "destination": 2,
+                "distance": 205,
+            }
+        )
         sample_route()
-        res = self.client.put(get_detail_url(1), data=payload)
+        res = self.client.put(
+            get_detail_url(1), data=payload, content_type="application/json"
+        )
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_partial_update_forbidden(self):
         sample_route()
-        res = self.client.patch(get_detail_url(1), data={"distance": 300})
+        res = self.client.patch(
+            get_detail_url(1),
+            data=json.dumps({"distance": 300}),
+            content_type="application/json",
+        )
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_delete_method_forbidden(self):
@@ -158,36 +202,50 @@ class PublicRouteApiTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
 
-class AdminRouteApiTest(TestCase):
-    def setUp(self):
-        self.client = APIClient()
-        self.user = get_user_model().objects.create_superuser(
+class AdminRouteApiTest(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = get_user_model().objects.create_superuser(
             email="admin@admin.com", password="BAueai32!"
         )
+
+    def setUp(self) -> None:
         self.client.force_authenticate(self.user)
 
     def test_create_allowed(self):
         sample_station(name="first")
         sample_station(name="second")
-        payload = {
-            "source": 1,
-            "destination": 2,
-            "distance": 100,
-        }
-        res = self.client.post(ROUTE_URL, data=payload)
+        payload = json.dumps(
+            {
+                "source": 1,
+                "destination": 2,
+                "distance": 100,
+            }
+        )
+        res = self.client.post(
+            ROUTE_URL, data=payload, content_type="application/json"
+        )
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
 
     def test_update_partial_update_allowed(self):
         sample_route()
-        payload = {
-            "source": 2,
-            "destination": 1,
-            "distance": 100,
-        }
-        res = self.client.put(get_detail_url(1), data=payload)
+        payload = json.dumps(
+            {
+                "source": 2,
+                "destination": 1,
+                "distance": 100,
+            }
+        )
+        res = self.client.put(
+            get_detail_url(1), data=payload, content_type="application/json"
+        )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
-        res = self.client.patch(get_detail_url(1), data={"distance": 200})
+        res = self.client.patch(
+            get_detail_url(1),
+            data=json.dumps({"distance": 200}),
+            content_type="application/json",
+        )
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
     def test_delete_allowed(self):
