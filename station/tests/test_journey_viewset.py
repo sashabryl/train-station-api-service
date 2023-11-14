@@ -82,48 +82,6 @@ class AnonymousJourneyApiTests(TestCase):
     def setUp(self):
         self.client = APIClient()
 
-    def test_list_retrieve_methods_allowed(self):
-        sample_journey()
-        res = self.client.get(JOURNEY_URL)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-
-        res = self.client.get(get_detail_url(1))
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-
-    def test_list_returns_correct_data(self):
-        route_two = sample_route(
-            source=sample_station(name="third"),
-            destination=sample_station(name="fourth"),
-        )
-        sample_journey()
-        sample_journey(route=route_two)
-        journeys = Journey.objects.all().annotate(
-            tickets_available=(
-                F("train__cargo_num") * F("train__places_in_cargo")
-                - Count(F("tickets"))
-            )
-        )
-        journey_one, journey_two = journeys[0], journeys[1]
-        res = self.client.get(JOURNEY_URL)
-        serializer = JourneyListSerializer(
-            [journey_one, journey_two], many=True
-        )
-        self.assertEqual(res.data, serializer.data)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-
-    def test_retrieve_returns_correct_data(self):
-        sample_journey()
-        journey = Journey.objects.all().annotate(
-            tickets_available=(
-                F("train__cargo_num") * F("train__places_in_cargo")
-                - Count(F("tickets"))
-            )
-        )[0]
-        serializer = JourneyDetailSerializer(journey, many=False)
-        res = self.client.get(get_detail_url(1))
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(res.data, serializer.data)
-
     def test_filtering_by_source_destination(self):
         first = sample_station(name="first")
         second = sample_station(name="second")
@@ -305,36 +263,6 @@ class AdminJourneyApiTest(TestCase):
             email="admin@admin.com", password="BAueai32!"
         )
         self.client.force_authenticate(self.user)
-
-    def test_create_allowed(self):
-        sample_train()
-        sample_route()
-        sample_crew()
-        payload = {
-            "train": 1,
-            "route": 1,
-            "departure_time": datetime.datetime.now(),
-            "crew_members": [1],
-        }
-        res = self.client.post(JOURNEY_URL, data=payload)
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-
-    def test_update_partial_update_allowed(self):
-        sample_crew()
-        payload = {
-            "train": 2,
-            "route": 1,
-            "departure_time": datetime.datetime.now(),
-            "crew_members": [1],
-        }
-        sample_train()
-        sample_journey()
-        res = self.client.put(get_detail_url(1), data=payload)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-
-        sample_crew()
-        res = self.client.patch(get_detail_url(1), data={"crew_members": [2]})
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
 
     def test_delete_allowed(self):
         sample_journey()

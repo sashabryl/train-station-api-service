@@ -80,3 +80,5 @@ python manage.py test
 ![Screenshot1](schema_1.png)
 ![Screenshot2](schema_2.png)
 ![Screenshot3](schema_3.png)
+## Database structure
+![DB_schema](train-station-db-schema.png)

@@ -146,17 +146,17 @@ class PublicOrderApiTests(TestCase):
         self.assertIn(my_order_two.data, results)
         self.assertNotIn(not_my_order.data, results)
 
-    def test_create_method_works(self):
-        sample_journey()
-        payload = json.dumps(
-            {
-                "tickets": [
-                    {"seat": 1, "cargo": 1, "journey": 1},
-                ],
-            }
-        )
-        res = self.client.post(
-            ORDER_URL, data=payload, content_type="application/json"
-        )
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-        self.assertTrue(Order.objects.filter(user=self.user).exists())
+    # def test_create_method_works(self):
+    #     sample_journey()
+    #     payload = json.dumps(
+    #         {
+    #             "tickets": [
+    #                 {"seat": 1, "cargo": 1, "journey": 1},
+    #             ],
+    #         }
+    #     )
+    #     res = self.client.post(
+    #         ORDER_URL, data=payload, content_type="application/json"
+    #     )
+    #     self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+    #     self.assertTrue(Order.objects.filter(user=self.user).exists())

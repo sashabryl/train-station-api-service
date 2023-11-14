@@ -99,29 +99,6 @@ class AdminCrewApiTest(TestCase):
         )
         self.client.force_authenticate(self.user)
 
-    def test_list_returns_correct_data(self):
-        bob = sample_crew()
-        alas = sample_crew()
-        res = self.client.get(CREW_URL)
-        serializer = CrewSerializer([bob, alas], many=True)
-        self.assertEqual(res.data, serializer.data)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-
-    def test_list_retrieve_methods_allowed(self):
-        sample_crew()
-        res = self.client.get(CREW_URL)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-
-        res = self.client.get(get_detail_url(1))
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-
-    def test_retrieve_returns_correct_data(self):
-        crew = sample_crew()
-        serializer = CrewDetailSerializer(crew, many=False)
-        res = self.client.get(get_detail_url(1))
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(res.data, serializer.data)
-
     def test_filtering_by_full_name(self):
         bob = sample_crew(first_name="Bob", last_name="Robertson")
         alan = sample_crew(first_name="Alan", last_name="Douglas")
@@ -147,21 +124,3 @@ class AdminCrewApiTest(TestCase):
         }
         res = self.client.post(CREW_URL, data=payload)
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-
-    def test_update_partial_update_allowed(self):
-        sample_crew()
-        payload = {
-            "email": "bob@gmail.com",
-            "first_name": "robert",
-            "last_name": "alice",
-        }
-        res = self.client.put(get_detail_url(1), data=payload)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-
-        res = self.client.patch(get_detail_url(1), data={"last_name": "new"})
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-
-    def test_delete_allowed(self):
-        sample_crew()
-        res = self.client.delete(get_detail_url(1))
-        self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)

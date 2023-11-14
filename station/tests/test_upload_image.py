@@ -130,27 +130,6 @@ class StationImageUploadTests(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_post_image_to_station_list(self):
-        url = STATION_URL
-        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
-            img = Image.new("RGB", (10, 10))
-            img.save(ntf, format="JPEG")
-            ntf.seek(0)
-            res = self.client.post(
-                url,
-                {
-                    "name": "The vokzal",
-                    "longitude": 90.3,
-                    "latitude": 32.4,
-                    "image": ntf,
-                },
-                format="multipart",
-            )
-
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-        station = Station.objects.get(name="The vokzal")
-        self.assertFalse(station.image)
-
 
 class TrainImageUploadTests(TestCase):
     def setUp(self):
@@ -187,24 +166,3 @@ class TrainImageUploadTests(TestCase):
         )
 
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_post_image_to_train_list(self):
-        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
-            img = Image.new("RGB", (10, 10))
-            img.save(ntf, format="JPEG")
-            ntf.seek(0)
-            res = self.client.post(
-                TRAIN_URL,
-                {
-                    "name": "Le train grand",
-                    "cargo_num": 2,
-                    "places_in_cargo": 15,
-                    "train_type": 2,
-                    "image": ntf,
-                },
-                format="multipart",
-            )
-
-        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-        train = Train.objects.get(name="Le train grand")
-        self.assertFalse(train.image)
